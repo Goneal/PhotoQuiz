@@ -25,48 +25,58 @@ struct ContentView: View {
 }
 // MARK: - Landing Page
 struct LandingPage: View {
-    // Tracks whether the settings screen is visible
     @State private var showSettings = false
+    @State private var logoOffset: CGFloat = 0 // New state for animation
     
     var body: some View {
+        GeometryReader { geometry in
             NavigationView {
                 ZStack {
-                    // Background Image
-                    Image("pexels-shvetsa-3683107") // Replace with your actual image name
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width:500, height: 1000)
-                        .offset(x: 50 * 0.05) // Move 5% of the screen width to the left
-                                                .clipped()
+                    // Background Gradient
+                    LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
+                                   startPoint: .top,
+                                   endPoint: .bottom)
                         .edgesIgnoringSafeArea(.all)
                     
                     // Semi-transparent overlay to improve text readability
-                    Color.black.opacity(0.3)
+                    Color.black.opacity(0.1)
                         .edgesIgnoringSafeArea(.all)
                     
-                    // Existing content
-                    VStack(spacing: 20) {
-                        Text("Photo Quiz")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
+                    Spacer()
+                    
+                    // Content
+                    VStack(spacing: geometry.size.height * 0.05) {
+                        Image("PhotoQuiz-Logo") // Replace with your actual image name
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: geometry.size.width * 10.6, height: geometry.size.width * 0.6)
+                            .offset(y: logoOffset) // Apply the offset for animation
+                                                        
+                        
+                       // Spacer()
                         
                         NavigationLink(destination: GameIndex()) {
                             Text("Start")
-                                .padding()
-                                .background(Color.black)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
+                                .padding(20)
+                                .frame(width: geometry.size.width * 0.7, height: geometry.size.height * 0.08)
+                                .background(Color.white)
+                                .foregroundColor(.black)
+                                .cornerRadius(25)
+                            
                         }
                         
                         Button("Settings") {
                             showSettings = true
                         }
-                        .padding()
-                        .background(Color.black)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .padding(20)
+                        .frame(width: geometry.size.width * 0.7, height: geometry.size.height * 0.08)
+                        .background(Color.white)
+                        .foregroundColor(.black)
+                        .cornerRadius(25)
+                        
+                        Spacer()
                     }
+                    .padding(.bottom, geometry.size.height * 0.05)
                 }
                 .navigationBarHidden(true)
             }
@@ -74,6 +84,7 @@ struct LandingPage: View {
                 SettingsView()
             }
         }
+    }
 }
 
 
@@ -129,6 +140,10 @@ struct GameIndex: View {
             // Yellow background
             Color(hex: 0xfcd200)
                 .edgesIgnoringSafeArea(.all)
+                 LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
+                                            startPoint: .top,
+                                            endPoint: .bottom)
+                                 .edgesIgnoringSafeArea(.all)
             
             // List content
             VStack {
@@ -138,14 +153,21 @@ struct GameIndex: View {
                             GameRowView(game: game)
                         }
                         .disabled(gameManager.gameLockEnabled && !game.isUnlocked)
-                        .listRowBackground(Color(hex: 0xfcd200))
+                        .listRowBackground(Color.clear)
+                        
                     }
                     .listRowSeparator(.hidden)
                 }
                 .listStyle(PlainListStyle())
-              // .background( Color(hex: 0xfcd200))
+               .background(  LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
+                                            startPoint: .top,
+                                            endPoint: .bottom))
             }
         }
+        .background( LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
+                                    startPoint: .top,
+                                    endPoint: .bottom)
+                         .edgesIgnoringSafeArea(.all))
         .navigationTitle("Quiz Games")
         .navigationBarItems(trailing: Button(action: {
             showSettings = true
@@ -227,7 +249,7 @@ class GameManager: ObservableObject {
         
         // Initializes the games with their respective data
         self.games = [
-            Game(name: "Animals",
+            Game(name: "",
                  description: "Identify animals",
                  thumbnail: "icons8-lion-96",
                  isUnlocked: true, progress: 0,
@@ -237,6 +259,12 @@ class GameManager: ObservableObject {
                         options: [
                             AnswerOption(name: "Dog", imageName: "pexels-valeriya-1805164"),
                             AnswerOption(name: "Cat", imageName: "pexels-kowalievska-1170986"),
+                            AnswerOption(name: "Elephant", imageName: "pexels-pixabay-66898"),
+                            AnswerOption(name: "Lion", imageName: "pexels-gareth-davies-230510-1598377"),
+                            AnswerOption(name: "Dog", imageName: "pexels-valeriya-1805164"),
+                            AnswerOption(name: "Cat", imageName: "pexels-kowalievska-1170986"),
+                            AnswerOption(name: "Elephant", imageName: "pexels-pixabay-66898"),
+                            AnswerOption(name: "Lion", imageName: "pexels-gareth-davies-230510-1598377"),
                             AnswerOption(name: "Elephant", imageName: "pexels-pixabay-66898"),
                             AnswerOption(name: "Lion", imageName: "pexels-gareth-davies-230510-1598377"),
                             
@@ -256,7 +284,7 @@ class GameManager: ObservableObject {
                     // Hard difficulty questions...
                  ]),
             
-            Game(name: "Landmarks",
+            Game(name: "",
                  description: "Name landmarks",
                  thumbnail: "icons8-building-100",
                  isUnlocked: false, progress: 0,
@@ -283,7 +311,7 @@ class GameManager: ObservableObject {
                     // Hard difficulty questions...
                  ]),
             
-            Game(name: "Food",
+            Game(name: "",
                  description: "Name Foods",
                  thumbnail: "icons8-pizza-96",
                  isUnlocked: false, progress: 0,
@@ -505,25 +533,30 @@ struct QuizGame: View {
                                 .font(.headline)
                                 .padding()
                             
-                           
+                          //  let gridItemSize = (geometry.size.width - 190) / 2
+                            // 40 is total horizontal padding
                             
-                            let gridItemSize = (geometry.size.width - 90) / 2 // 40 is total horizontal padding
-                            
-                            LazyVGrid(columns: [GridItem(.fixed(gridItemSize), spacing: 10), GridItem(.fixed(gridItemSize), spacing: 10)], spacing: 10) {
-                                ForEach(questions[currentQuestion].options.indices, id: \.self) { index in
-                                    Button(action: {
-                                        checkAnswer(index)
-                                    }) {
-                                        CachedImage(imageName: questions[currentQuestion].options[index].imageName)
-                                            .scaledToFill()
-                                            .frame(width: gridItemSize, height: gridItemSize)
-                                            .clipped()
-                                            .border(borderColor(for: index), width: 4)
-                                    }
-                                    .disabled(showFeedback)
-                                }
-                            }
-                            .padding(.horizontal, 20)
+                            // Calculate grid item size
+                                                    let gridItemSize = calculateGridItemSize(for: geometry)
+                                                    
+                                                    LazyVGrid(columns: [GridItem(.adaptive(minimum: gridItemSize.width ), spacing: -70)], spacing: 15) {
+                                                        ForEach(questions[currentQuestion].options.indices, id: \.self) { index in
+                                                            Button(action: { checkAnswer(index) }) {
+                                                                Image(questions[currentQuestion].options[index].imageName)
+                                                                    .resizable()
+                                                                    .scaledToFill()
+                                                                    .frame(width: gridItemSize.width - 100 , height: gridItemSize.height - 150 )
+                                                                    //.clipped()
+                                                                    .cornerRadius(10)
+                                                                    .overlay(
+                                                                        RoundedRectangle(cornerRadius: 10)
+                                                                            .stroke(borderColor(for: index), lineWidth: 4)
+                                                                    )
+                                                            }
+                                                            .disabled(showFeedback)
+                                                        }
+                                                    }
+                                                    .padding(.horizontal)
                             .shadow(color: .gray, radius: 4, x: 2, y: 5)
                             .cornerRadius(25)
         
@@ -539,11 +572,20 @@ struct QuizGame: View {
                                                 }
                                                 .frame(width: 150) // Adjust this width as needed
                                                 
+                                                Button("Show Hint") {
+                                                    showHint = true
+                                                }
+                                                
                                                 if hintsEnabledForGame && !showFeedback {
-                                                    Button("Show Hint") {
+                                                    
+                                                } else {
+                                                    
+                                                    Button("") {
                                                         showHint = true
                                                     }
                                                     .disabled(showHint)
+                                                    
+                                                    
                                                 }
                                                 
                                                 Spacer() // Push content to the left
@@ -823,6 +865,14 @@ extension Color {
     static let customPurple = Color(red: 0.5, green: 0.0, blue: 0.5)
     static let customOrange = Color(hex: 0xFFA500)
 }
+
+
+//MARK: Calculates grid Size
+private func calculateGridItemSize(for geometry: GeometryProxy) -> CGSize {
+       let width = (geometry.size.width - 60) / 2 // 60 accounts for horizontal padding and spacing
+       let height = width * (3/2) // This creates a 2:3 aspect ratio (portrait)
+       return CGSize(width: width, height: height)
+   }
 
 
 

@@ -134,17 +134,16 @@ struct SettingsView: View {
 struct GameIndex: View {
     @EnvironmentObject var gameManager: GameManager
     @State private var showSettings = false
+    @State private var selectedGame: Game?
 
     var body: some View {
         ZStack {
             // Yellow background
-            Color(hex: 0xfcd200)
+            LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
+                           startPoint: .top,
+                           endPoint: .bottom)
                 .edgesIgnoringSafeArea(.all)
-                 LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
-                                            startPoint: .top,
-                                            endPoint: .bottom)
-                                 .edgesIgnoringSafeArea(.all)
-            
+
             // List content
             VStack {
                 List {
@@ -154,28 +153,23 @@ struct GameIndex: View {
                         }
                         .disabled(gameManager.gameLockEnabled && !game.isUnlocked)
                         .listRowBackground(Color.clear)
-                        
                     }
                     .listRowSeparator(.hidden)
                 }
                 .listStyle(PlainListStyle())
-               .background(  LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
-                                            startPoint: .top,
-                                            endPoint: .bottom))
+                .background(LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
+                                           startPoint: .top,
+                                           endPoint: .bottom))
             }
         }
-        .background( LinearGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]),
-                                    startPoint: .top,
-                                    endPoint: .bottom)
-                         .edgesIgnoringSafeArea(.all))
         .navigationTitle("Quiz Games")
         .navigationBarItems(trailing: Button(action: {
             showSettings = true
         }) {
             Image(systemName: "gear")
-                .foregroundColor(.black) // Changed to black for better visibility on yellow
+                .foregroundColor(.black)
         })
-        .fullScreenCover(isPresented: $showSettings) {
+        .sheet(isPresented: $showSettings) {
             SettingsView()
         }
     }
@@ -241,12 +235,12 @@ class GameManager: ObservableObject {
     @Published var gameLockEnabled: Bool = true
     @Published var hintToggleEnabled:Bool = true
     var hintEnabled = true
-    
+
     init() {
         // Retrieves the saved game lock setting from user defaults
         self.gameLockEnabled = UserDefaults.standard.bool(forKey: "gameLockEnabled")
-        
-        
+
+
         // Initializes the games with their respective data
         self.games = [
             Game(name: "",
@@ -267,23 +261,23 @@ class GameManager: ObservableObject {
                             AnswerOption(name: "Lion", imageName: "pexels-gareth-davies-230510-1598377"),
                             AnswerOption(name: "Elephant", imageName: "pexels-pixabay-66898"),
                             AnswerOption(name: "Lion", imageName: "pexels-gareth-davies-230510-1598377"),
-                            
+
                         ],
                         correctAnswerIndex: 0, hint: "It's often called man's best friend"
-                     
+
                     ),
-                    
+
                     // More easy questions...
                  ],
                  mediumQuestions: [
-                    
-                    
+
+
                     // Medium difficulty questions...
                  ],
                  hardQuestions: [
                     // Hard difficulty questions...
                  ]),
-            
+
             Game(name: "",
                  description: "Name landmarks",
                  thumbnail: "icons8-building-100",
@@ -296,8 +290,8 @@ class GameManager: ObservableObject {
                             AnswerOption(name: "Big Ben", imageName: "pexels-danielbendig-912897"),
                             AnswerOption(name: "Tower of Tokyo", imageName: "pexels-berk-ozdemir-1761205-3779837"),
                         ],
-                        
-                        
+
+
                         correctAnswerIndex: 1,
                         hint: "It's in Paris"
 
@@ -310,7 +304,7 @@ class GameManager: ObservableObject {
                  hardQuestions: [
                     // Hard difficulty questions...
                  ]),
-            
+
             Game(name: "",
                  description: "Name Foods",
                  thumbnail: "icons8-pizza-96",
@@ -335,18 +329,18 @@ class GameManager: ObservableObject {
                     // Hard difficulty questions...
                  ]),
             // Add more games here...
-            
+
         ]
-        
+
         // Sets initial game lock states based on the stored setting
         self.setGameLock(enabled: self.gameLockEnabled)
-        
+
         // Preloads images for faster loading during gameplay
         Task {
             await preloadImages()
         }
     }
-    
+
     // Preloads all the images used in the game for better performance
     private func preloadImages() async {
         await withTaskGroup(of: Void.self) { group in
@@ -363,7 +357,7 @@ class GameManager: ObservableObject {
             }
         }
     }
-    
+
     // Enables or disables the game locking feature
     func setGameLock(enabled: Bool) {
         gameLockEnabled = enabled
@@ -381,13 +375,13 @@ class GameManager: ObservableObject {
         }
         objectWillChange.send() // Notifies views of data changes
     }
-    
+
     // Enables or disables the game locking feature
     func setHintToggle(enabled: Bool) {
         hintToggleEnabled = enabled
         if !enabled {
             // Unlocks all games if game lock is disabled
-            
+
         } else {
             // Unlocks games based on the progress of the previous game
             games[0].isUnlocked = true
@@ -397,12 +391,12 @@ class GameManager: ObservableObject {
         }
         objectWillChange.send() // Notifies views of data changes
     }
-    
+
     // Updates the high score for a specific game
     func updateHighScore(for game: String, score: Int) {
         highScores[game] = max(highScores[game] ?? 0, score)
     }
-    
+
     // Updates the progress of a game based on the score
     func updateProgress(for gameName: String, score: Int) {
         if let index = games.firstIndex(where: { $0.name == gameName }) {
@@ -412,7 +406,7 @@ class GameManager: ObservableObject {
             checkUnlocks()
         }
     }
-    
+
     // Checks and unlocks the next game if the previous one is sufficiently completed
     func checkUnlocks() {
         for i in 1..<games.count {
@@ -420,6 +414,13 @@ class GameManager: ObservableObject {
                 games[i].isUnlocked = true
             }
         }
+    }
+
+    // Moves to a random game, excluding the current game
+    func moveToRandomGame(excluding currentGame: Game) -> Game? {
+        let unlockedGames = games.filter { $0.isUnlocked && $0.id != currentGame.id }
+        guard !unlockedGames.isEmpty else { return nil }
+        return unlockedGames.randomElement()
     }
 }
 
@@ -475,7 +476,7 @@ struct QuizGame: View {
     @AppStorage("difficulty") private var difficulty = "Medium"
     @AppStorage("soundEnabled") private var soundEnabled = true
     @AppStorage("hintsEnabled") private var hintsEnabled = true  // Access hint setting
-    
+
     // The current game being played
     let game: Game
     // State variables to track the game progress
@@ -492,7 +493,8 @@ struct QuizGame: View {
     // Audio player for wrong answer sound
     @State private var audioPlayer: AVAudioPlayer?
     @AppStorage("timerEnabled") private var timerEnabled = true
-    
+    @State private var nextGame: Game?
+
     init(game: Game) {
         self.game = game
         // Initialize the game-specific hint toggle with the global setting
@@ -520,100 +522,78 @@ struct QuizGame: View {
     }
     
     var body: some View {
+        NavigationView {
             GeometryReader { geometry in
                 ScrollView {
                     VStack {
-                        
                         // Use the custom GameNameText here
-                                           GameNameText(text: game.name)
-                                               .padding(.top)
-                        
+                        GameNameText(text: game.name)
+                            .padding(.top)
+
                         if currentQuestion < questions.count {
                             Text(questions[currentQuestion].text)
                                 .font(.headline)
                                 .padding()
-                            
-                          //  let gridItemSize = (geometry.size.width - 190) / 2
-                            // 40 is total horizontal padding
-                            
+
                             // Calculate grid item size
-                                                    let gridItemSize = calculateGridItemSize(for: geometry)
-                                                    
-                                                    LazyVGrid(columns: [GridItem(.adaptive(minimum: gridItemSize.width ), spacing: -70)], spacing: 15) {
-                                                        ForEach(questions[currentQuestion].options.indices, id: \.self) { index in
-                                                            Button(action: { checkAnswer(index) }) {
-                                                                Image(questions[currentQuestion].options[index].imageName)
-                                                                    .resizable()
-                                                                    .scaledToFill()
-                                                                    .frame(width: gridItemSize.width - 100 , height: gridItemSize.height - 150 )
-                                                                    //.clipped()
-                                                                    .cornerRadius(10)
-                                                                    .overlay(
-                                                                        RoundedRectangle(cornerRadius: 10)
-                                                                            .stroke(borderColor(for: index), lineWidth: 4)
-                                                                    )
-                                                            }
-                                                            .disabled(showFeedback)
-                                                        }
-                                                    }
-                                                    .padding(.horizontal)
+                            let gridItemSize = calculateGridItemSize(for: geometry)
+
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: gridItemSize.width ), spacing: -70)], spacing: 15) {
+                                ForEach(questions[currentQuestion].options.indices, id: \.self) { index in
+                                    Button(action: { checkAnswer(index) }) {
+                                        Image(questions[currentQuestion].options[index].imageName)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: gridItemSize.width - 100 , height: gridItemSize.height - 150 )
+                                            .cornerRadius(10)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(borderColor(for: index), lineWidth: 4)
+                                            )
+                                    }
+                                    .disabled(showFeedback)
+                                }
+                            }
+                            .padding(.horizontal)
                             .shadow(color: .gray, radius: 4, x: 2, y: 5)
                             .cornerRadius(25)
-        
+
                             // Hint section with fixed height
-                                        VStack {
-                                            HStack {
-                                                // Fixed-width container for Toggle and label
-                                                HStack {
-                                                    Text("")
-                                                    Spacer()
-                                                    Toggle("", isOn: $hintsEnabledForGame)
-                                                        .labelsHidden()
-                                                }
-                                                .frame(width: 150) // Adjust this width as needed
-                                                
-                                                Button("Show Hint") {
-                                                    showHint = true
-                                                }
-                                                
-                                                if hintsEnabledForGame && !showFeedback {
-                                                    
-                                                } else {
-                                                    
-                                                    Button("") {
-                                                        showHint = true
-                                                    }
-                                                    .disabled(showHint)
-                                                    
-                                                    
-                                                }
-                                                
-                                                Spacer() // Push content to the left
-                                            }
-                                            .padding(.horizontal)
-                                            
-                                            if showHint && hintsEnabledForGame {
-                                                Text(questions[currentQuestion].hint)
-                                                    .font(.caption)
-                                                    .foregroundColor(.blue)
-                                                    .transition(.opacity)
-                                            }
-                                        }
-                                        .frame(height: 80)  // Fixed height for hint section
-                            
-                           /* if showHint && hintsEnabledForGame {
-                                Text(questions[currentQuestion].hint)
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                                    .transition(.scale)
-                            }*/
-                            
+                            VStack {
+                                HStack {
+                                    // Fixed-width container for Toggle and label
+                                    HStack {
+                                        Text("")
+                                        Spacer()
+                                        Toggle("", isOn: $hintsEnabledForGame)
+                                            .labelsHidden()
+                                    }
+                                    .frame(width: 150) // Adjust this width as needed
+
+                                    Button("Show Hint") {
+                                        showHint = true
+                                    }
+                                    .disabled(!hintsEnabledForGame || showFeedback)
+
+                                    Spacer() // Push content to the left
+                                }
+                                .padding(.horizontal)
+
+                                if showHint && hintsEnabledForGame {
+                                    Text(questions[currentQuestion].hint)
+                                        .font(.caption)
+                                        .foregroundColor(.blue)
+                                        .transition(.opacity)
+                                }
+                            }
+                            .frame(height: 80)  // Fixed height for hint section
+
                             if showFeedback {
                                 Text(feedbackMessage)
                                     .foregroundColor(isCorrect ? .green : .red)
                                     .padding()
                                     .transition(.scale)
-                                
+
                                 Button("Next Question") {
                                     withAnimation {
                                         nextQuestion()
@@ -627,16 +607,15 @@ struct QuizGame: View {
                         } else {
                             gameOver
                         }
-                        
+
                         Text("Score: \(score)")
                             .font(.system(size: 34))
                             .padding()
-                        
+
                         if timerEnabled {
                             Text("Time: \(timeRemaining)")
                                 .font(.caption)
                                 .foregroundColor(timeRemaining < 5 ? .red : .primary)
-                            
                         }
                     }
                 }
@@ -644,48 +623,58 @@ struct QuizGame: View {
             .padding()
             .onAppear(perform: startGame)
             .onDisappear(perform: endGame)
-            .background( Color(hex: 0xfcd200))
+            .background(Color(hex: 0xfcd200))
+            .navigationBarTitle("Quiz", displayMode: .inline)
+            .navigationBarItems(leading: Button("Back") {
+                presentationMode.wrappedValue.dismiss()
+            })
         }
+        .navigationViewStyle(StackNavigationViewStyle())
+        .fullScreenCover(item: $nextGame) { game in
+            QuizGame(game: game).environmentObject(gameManager)
+        }
+    }
+
     // View shown when the game is over
     var gameOver: some View {
-        
         ZStack {
             Rectangle()
-                            .fill(Color.white)
-                            .frame(width: 330, height: 250)
-                           // .shadow(color: Color.black, radius: 5, x: 8, y: 2)
-                            .cornerRadius(18)
-            
-            VStack {
+                .fill(Color.white)
+                .frame(width: 330, height: 300)
+                .cornerRadius(18)
+
+            VStack(spacing: 20) {
                 Text("Game Over!")
                 Text("Your score: \(score)/\(questions.count)")
-                
+
                 if score > (gameManager.highScores[game.name] ?? 0) {
                     Text("New High Score!")
                         .foregroundColor(.green)
                         .font(.custom("", size: 12))
-
                 }
-                
-                Button("Play Again") {
-                    withAnimation {
-                        startGame()
+
+                Button("Next Game") {
+                    if let next = gameManager.moveToRandomGame(excluding: game) {
+                        nextGame = next
                     }
                 }
                 .padding()
-                .background(Color.black)
+                .background(Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(10)
-                
+
                 Button("Back to Games") {
                     presentationMode.wrappedValue.dismiss()
                 }
                 .padding()
-            } .padding(120)
-            
-            
+                .background(Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+            .padding(120)
         }
-        }
+    }
+
     // Determines the border color for answer options
     func borderColor(for index: Int) -> Color {
         if showFeedback {

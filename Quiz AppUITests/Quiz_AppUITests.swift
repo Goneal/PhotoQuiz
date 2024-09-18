@@ -27,9 +27,12 @@ final class Quiz_AppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        // Navigate to the first game
+        // Navigate to the game list
         app.buttons["Start"].tap()
-        app.buttons.firstMatch.tap() // Tap the first game in the list
+
+        // Test Random Game functionality
+        app.buttons["Random Game"].tap()
+        XCTAssertTrue(app.staticTexts.element(matching: .any, identifier: "QuestionText").exists, "Random game should have started")
 
         // Play the game and finish it
         for _ in 1...5 { // Assuming 5 questions per game
@@ -51,6 +54,14 @@ final class Quiz_AppUITests: XCTestCase {
 
         // Verify we're back at the game index
         XCTAssertTrue(app.navigationBars["Quiz Games"].exists, "Should be back at the game index")
+
+        // Test navigation to a specific game
+        app.buttons.firstMatch.tap() // Tap the first game in the list
+        XCTAssertTrue(app.staticTexts.element(matching: .any, identifier: "QuestionText").exists, "Specific game should have started")
+
+        // Verify back button functionality again
+        backButton.tap()
+        XCTAssertTrue(app.navigationBars["Quiz Games"].exists, "Should be back at the game index after specific game")
     }
 
     @MainActor

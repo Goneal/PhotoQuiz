@@ -648,25 +648,23 @@ struct QuizGame: View {
         }
     // View shown when the game is over
     var gameOver: some View {
-        
+
         ZStack {
             Rectangle()
                             .fill(Color.white)
-                            .frame(width: 330, height: 250)
-                           // .shadow(color: Color.black, radius: 5, x: 8, y: 2)
+                            .frame(width: 330, height: 300)
                             .cornerRadius(18)
-            
+
             VStack {
                 Text("Game Over!")
                 Text("Your score: \(score)/\(questions.count)")
-                
+
                 if score > (gameManager.highScores[game.name] ?? 0) {
                     Text("New High Score!")
                         .foregroundColor(.green)
                         .font(.custom("", size: 12))
-
                 }
-                
+
                 Button("Play Again") {
                     withAnimation {
                         startGame()
@@ -676,16 +674,25 @@ struct QuizGame: View {
                 .background(Color.black)
                 .foregroundColor(.white)
                 .cornerRadius(10)
-                
+
+                Button("Next Game") {
+                    withAnimation {
+                        startNextGame()
+                    }
+                }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+
                 Button("Back to Games") {
                     presentationMode.wrappedValue.dismiss()
                 }
                 .padding()
             } .padding(120)
-            
-            
         }
-        }
+    }
+
     // Determines the border color for answer options
     func borderColor(for index: Int) -> Color {
         if showFeedback {
@@ -696,6 +703,18 @@ struct QuizGame: View {
             }
         }
         return .clear // No border when not showing feedback
+    }
+
+    // Function to start the next game
+    func startNextGame() {
+        if let nextGame = gameManager.games.randomElement() {
+            presentationMode.wrappedValue.dismiss()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let newQuizGame = QuizGame(game: nextGame)
+                let hostingController = UIHostingController(rootView: newQuizGame.environmentObject(gameManager))
+                UIApplication.shared.windows.first?.rootViewController?.present(hostingController, animated: true, completion: nil)
+            }
+        }
     }
     
     // Starts a new game
